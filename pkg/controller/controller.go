@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"sync"
 	"time"
+	"strings"
 )
 
 // PodController watches the kubernetes api for changes to Pods and
@@ -104,8 +105,9 @@ func (c *PodController) doTheMagic(cur interface{}, keepSuccessHours int, keepFa
 	parentJobName := c.getParentJobName(podObj, version)
 	// if we couldn't find a prent job name & not deploy job, ignore this pod
 	if parentJobName == "" {
+		imageParts := strings.SplitN(podObj.Spec.Containers[0].Image, ":", 2)
 		if len(podObj.Spec.InitContainers) == 0 && len(podObj.Spec.Containers) == 1 &&
-			podObj.Spec.Containers[0].Image != "831119889470.dkr.ecr.eu-central-1.amazonaws.com/deploy:3.0" {
+			imageParts[0] == "831119889470.dkr.ecr.eu-central-1.amazonaws.com/deploy" {
 				log.Printf("Pod %s is deploy pod", podObj.Name)
 
 		} else {
