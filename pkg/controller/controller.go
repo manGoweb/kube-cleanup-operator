@@ -84,7 +84,7 @@ func NewPodController(kclient *kubernetes.Clientset, opts map[string]string) *Po
 
 // Run starts the process for listening for pod changes and acting upon those changes.
 func (c *PodController) Run(stopCh <-chan struct{}, wg *sync.WaitGroup) {
-	log.Printf("Listening for changes...")
+	log.Printf("Listening for changes... [v0.5]")
 	// When this function completes, mark the go function as done
 	defer wg.Done()
 
