@@ -102,10 +102,16 @@ func (c *PodController) doTheMagic(cur interface{}, keepSuccessHours int, keepFa
 
 	podObj := cur.(*v1.Pod)
 	parentJobName := c.getParentJobName(podObj, version)
-	// if we couldn't find a prent job name, ignore this pod
+	// if we couldn't find a prent job name & not deploy job, ignore this pod
 	if parentJobName == "" {
-		log.Printf("Pod %s was not created by a job, ignoring.", podObj.Name)
-		return
+		if len(podObj.Spec.InitContainers) == 0 && len(podObj.Spec.Containers) == 1 &&
+			podObj.Spec.Containers[0].Image != "831119889470.dkr.ecr.eu-central-1.amazonaws.com/deploy:3.0" {
+				log.Printf("Pod %s is deploy pod", podObj.Name)
+
+		} else {
+			log.Printf("Pod %s was not created by a job & not deploy pod, ignoring.", podObj.Name)
+			return
+		}
 	}
 
 	executionTimeHours := c.getExecutionTimeHours(podObj)
@@ -154,13 +160,16 @@ func (c *PodController) deleteObjects(podObj *v1.Pod, parentJobName string, dryR
 	} else {
 		log.Printf("Pod '%s' would have been deleted", podObj.Name)
 	}
-	// Delete Job itself
-	if !dryRun {
-		log.Printf("Deleting job '%s'", parentJobName)
-		var jo metav1.DeleteOptions
-		c.kclient.BatchV1Client.Jobs(podObj.Namespace).Delete(parentJobName, &jo)
-	} else {
-		log.Printf("Job '%s' would have been deleted", parentJobName)
+
+	if parentJobName != "" {
+		// Delete Job itself
+		if !dryRun {
+			log.Printf("Deleting job '%s'", parentJobName)
+			var jo metav1.DeleteOptions
+			c.kclient.BatchV1Client.Jobs(podObj.Namespace).Delete(parentJobName, &jo)
+		} else {
+			log.Printf("Job '%s' would have been deleted", parentJobName)
+		}
 	}
 	return
 }
