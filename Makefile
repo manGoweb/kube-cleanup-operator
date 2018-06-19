@@ -1,6 +1,6 @@
 NAME := kube-cleanup-operator
 AUTHOR=lwolf
-VERSION ?= 0.5
+VERSION ?= 0.6
 REGISTRY ?= 831119889470.dkr.ecr.eu-central-1.amazonaws.com
 GIT_SHA=$(shell git --no-pager describe --always --dirty)
 BUILD_TIME=$(shell date '+%s')

@@ -103,17 +103,22 @@ func (c *PodController) doTheMagic(cur interface{}, keepSuccessHours int, keepFa
 
 	podObj := cur.(*v1.Pod)
 	parentJobName := c.getParentJobName(podObj, version)
-	// if we couldn't find a prent job name & not deploy job, ignore this pod
-	if parentJobName == "" {
-		imageParts := strings.SplitN(podObj.Spec.Containers[0].Image, ":", 2)
-		if len(podObj.Spec.InitContainers) == 0 && len(podObj.Spec.Containers) == 1 &&
-			imageParts[0] == "831119889470.dkr.ecr.eu-central-1.amazonaws.com/deploy" {
-				log.Printf("Pod %s is deploy pod", podObj.Name)
+	imageParts := strings.SplitN(podObj.Spec.Containers[0].Image, ":", 2)
 
-		} else {
-			log.Printf("Pod %s was not created by a job & not deploy pod, ignoring.", podObj.Name)
-			return
+	if parentJobName != "" {
+		// pod created by job, can safely delete
+
+	} else if len(podObj.Spec.InitContainers) == 0 &&
+		len(podObj.Spec.Containers) == 1 &&
+		imageParts[0] == "831119889470.dkr.ecr.eu-central-1.amazonaws.com/deploy" {
+			log.Printf("Pod %s is deploy pod", podObj.Name)
+
+	} else {
+		log.Printf("Pod %s was not created by a job & not deploy pod, ignoring.", podObj.Name)
+		if parentJobName != "" {
+			log.Printf("%s: init=%v, cont=%v, part0=%v", podObj.Name, len(podObj.Spec.InitContainers), len(podObj.Spec.Containers), imageParts[0])
 		}
+		return
 	}
 
 	executionTimeHours := c.getExecutionTimeHours(podObj)
